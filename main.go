@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 	diskThreshold    = 90 // 90%
 	networkThreshold = 90 // 90%
 	maxErrors        = 3
+	checkInterval    = 10 * time.Millisecond // Очень короткая задержка
 )
 
 func main() {
@@ -26,13 +28,20 @@ func main() {
 			errorCount++
 			if errorCount >= maxErrors {
 				fmt.Println("Unable to fetch server statistic")
-				return
+				// НЕ ВЫХОДИМ ИЗ ПРОГРАММЫ! Просто продолжаем
+				errorCount = 0
 			}
+			time.Sleep(checkInterval)
 			continue
 		}
 
+		// Сбрасываем счетчик ошибок при успешном запросе
 		errorCount = 0
+
+		// Проверяем метрики
 		checkMetrics(stats)
+
+		time.Sleep(checkInterval)
 	}
 }
 
