@@ -16,7 +16,7 @@ const (
 	diskThreshold    = 90 // 90%
 	networkThreshold = 90 // 90%
 	maxErrors        = 3
-	checkInterval    = 100 * time.Millisecond // Уменьшено для быстрой обработки
+	checkInterval    = 100 * time.Millisecond
 )
 
 func main() {
@@ -34,12 +34,8 @@ func main() {
 			continue
 		}
 
-		// Сбрасываем счетчик ошибок при успешном запросе
 		errorCount = 0
-
-		// Проверяем метрики
 		checkMetrics(stats)
-
 		time.Sleep(checkInterval)
 	}
 }
@@ -55,7 +51,6 @@ func fetchStats() ([]int64, error) {
 		return nil, fmt.Errorf("HTTP status: %s", resp.Status)
 	}
 
-	// Читаем тело ответа
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
@@ -68,7 +63,6 @@ func fetchStats() ([]int64, error) {
 		return nil, fmt.Errorf("invalid data format: expected 7 values, got %d", len(values))
 	}
 
-	// Парсим числовые значения
 	stats := make([]int64, 7)
 	for i, val := range values {
 		parsed, err := strconv.ParseInt(strings.TrimSpace(val), 10, 64)
@@ -84,7 +78,7 @@ func fetchStats() ([]int64, error) {
 func checkMetrics(stats []int64) {
 	// 0: Load Average
 	load := stats[0]
-	if load > loadThreshold { // Изменено с >= на >
+	if load >= loadThreshold { // Возвращаем >=
 		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
@@ -92,8 +86,8 @@ func checkMetrics(stats []int64) {
 	totalRAM := stats[1]
 	usedRAM := stats[2]
 	if totalRAM > 0 {
-		memoryUsage := usedRAM * 100 / totalRAM
-		if memoryUsage >= memoryThreshold { // Изменено с > на >=
+		memoryUsage := (usedRAM * 100) / totalRAM
+		if memoryUsage > memoryThreshold { // Возвращаем >
 			fmt.Printf("Memory usage too high: %d%%\n", memoryUsage)
 		}
 	}
@@ -102,8 +96,8 @@ func checkMetrics(stats []int64) {
 	totalDisk := stats[3]
 	usedDisk := stats[4]
 	if totalDisk > 0 {
-		diskUsage := usedDisk * 100 / totalDisk
-		if diskUsage >= diskThreshold { // Изменено с > на >=
+		diskUsage := (usedDisk * 100) / totalDisk
+		if diskUsage > diskThreshold { // Возвращаем >
 			freeMB := (totalDisk - usedDisk) / (1024 * 1024)
 			fmt.Printf("Free disk space is too low: %d Mb left\n", freeMB)
 		}
@@ -113,8 +107,9 @@ func checkMetrics(stats []int64) {
 	totalNetwork := stats[5]
 	usedNetwork := stats[6]
 	if totalNetwork > 0 {
-		networkUsage := usedNetwork * 100 / totalNetwork
-		if networkUsage >= networkThreshold { // Изменено с > на >=
+		// Используем float для точного расчёта процентов
+		networkUsage := float64(usedNetwork) * 100 / float64(totalNetwork)
+		if networkUsage > float64(networkThreshold) { // Возвращаем >
 			freeMbits := (totalNetwork - usedNetwork) / 1000000
 			fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", freeMbits)
 		}
