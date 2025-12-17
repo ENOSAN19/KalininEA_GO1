@@ -16,7 +16,7 @@ const (
 	diskThreshold    = 90 // 90%
 	networkThreshold = 90 // 90%
 	maxErrors        = 3
-	checkInterval    = 100 * time.Millisecond
+	checkInterval    = 50 * time.Millisecond // Ещё меньше!
 )
 
 func main() {
@@ -78,7 +78,7 @@ func fetchStats() ([]int64, error) {
 func checkMetrics(stats []int64) {
 	// 0: Load Average
 	load := stats[0]
-	if load >= loadThreshold { // Возвращаем >=
+	if load >= loadThreshold {
 		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
@@ -86,8 +86,9 @@ func checkMetrics(stats []int64) {
 	totalRAM := stats[1]
 	usedRAM := stats[2]
 	if totalRAM > 0 {
+		// Точный расчёт процентов с округлением вниз (как в целочисленном делении)
 		memoryUsage := (usedRAM * 100) / totalRAM
-		if memoryUsage > memoryThreshold { // Возвращаем >
+		if memoryUsage >= memoryThreshold { // >= 80%
 			fmt.Printf("Memory usage too high: %d%%\n", memoryUsage)
 		}
 	}
@@ -97,7 +98,7 @@ func checkMetrics(stats []int64) {
 	usedDisk := stats[4]
 	if totalDisk > 0 {
 		diskUsage := (usedDisk * 100) / totalDisk
-		if diskUsage > diskThreshold { // Возвращаем >
+		if diskUsage >= diskThreshold { // >= 90%
 			freeMB := (totalDisk - usedDisk) / (1024 * 1024)
 			fmt.Printf("Free disk space is too low: %d Mb left\n", freeMB)
 		}
@@ -107,9 +108,8 @@ func checkMetrics(stats []int64) {
 	totalNetwork := stats[5]
 	usedNetwork := stats[6]
 	if totalNetwork > 0 {
-		// Используем float для точного расчёта процентов
-		networkUsage := float64(usedNetwork) * 100 / float64(totalNetwork)
-		if networkUsage > float64(networkThreshold) { // Возвращаем >
+		networkUsage := (usedNetwork * 100) / totalNetwork
+		if networkUsage >= networkThreshold { // >= 90%
 			freeMbits := (totalNetwork - usedNetwork) / 1000000
 			fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", freeMbits)
 		}
