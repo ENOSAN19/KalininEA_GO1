@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -16,7 +15,6 @@ const (
 	diskThreshold    = 90 // 90%
 	networkThreshold = 90 // 90%
 	maxErrors        = 3
-	checkInterval    = 50 * time.Millisecond // Ещё меньше!
 )
 
 func main() {
@@ -28,15 +26,13 @@ func main() {
 			errorCount++
 			if errorCount >= maxErrors {
 				fmt.Println("Unable to fetch server statistic")
-				break
+				return
 			}
-			time.Sleep(checkInterval)
 			continue
 		}
 
 		errorCount = 0
 		checkMetrics(stats)
-		time.Sleep(checkInterval)
 	}
 }
 
@@ -86,9 +82,8 @@ func checkMetrics(stats []int64) {
 	totalRAM := stats[1]
 	usedRAM := stats[2]
 	if totalRAM > 0 {
-		// Точный расчёт процентов с округлением вниз (как в целочисленном делении)
 		memoryUsage := (usedRAM * 100) / totalRAM
-		if memoryUsage >= memoryThreshold { // >= 80%
+		if memoryUsage >= memoryThreshold {
 			fmt.Printf("Memory usage too high: %d%%\n", memoryUsage)
 		}
 	}
@@ -98,7 +93,7 @@ func checkMetrics(stats []int64) {
 	usedDisk := stats[4]
 	if totalDisk > 0 {
 		diskUsage := (usedDisk * 100) / totalDisk
-		if diskUsage >= diskThreshold { // >= 90%
+		if diskUsage >= diskThreshold {
 			freeMB := (totalDisk - usedDisk) / (1024 * 1024)
 			fmt.Printf("Free disk space is too low: %d Mb left\n", freeMB)
 		}
@@ -109,7 +104,7 @@ func checkMetrics(stats []int64) {
 	usedNetwork := stats[6]
 	if totalNetwork > 0 {
 		networkUsage := (usedNetwork * 100) / totalNetwork
-		if networkUsage >= networkThreshold { // >= 90%
+		if networkUsage >= networkThreshold {
 			freeMbits := (totalNetwork - usedNetwork) / 1000000
 			fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", freeMbits)
 		}
