@@ -16,7 +16,7 @@ const (
 	diskThreshold    = 90 // 90%
 	networkThreshold = 90 // 90%
 	maxErrors        = 3
-	checkInterval    = 1 * time.Second
+	checkInterval    = 100 * time.Millisecond // Уменьшено для быстрой обработки
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 			errorCount++
 			if errorCount >= maxErrors {
 				fmt.Println("Unable to fetch server statistic")
-				break // Выходим после 3 ошибок
+				break
 			}
 			time.Sleep(checkInterval)
 			continue
@@ -84,7 +84,7 @@ func fetchStats() ([]int64, error) {
 func checkMetrics(stats []int64) {
 	// 0: Load Average
 	load := stats[0]
-	if load >= loadThreshold {
+	if load > loadThreshold { // Изменено с >= на >
 		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
@@ -93,7 +93,7 @@ func checkMetrics(stats []int64) {
 	usedRAM := stats[2]
 	if totalRAM > 0 {
 		memoryUsage := usedRAM * 100 / totalRAM
-		if memoryUsage > memoryThreshold {
+		if memoryUsage >= memoryThreshold { // Изменено с > на >=
 			fmt.Printf("Memory usage too high: %d%%\n", memoryUsage)
 		}
 	}
@@ -103,7 +103,7 @@ func checkMetrics(stats []int64) {
 	usedDisk := stats[4]
 	if totalDisk > 0 {
 		diskUsage := usedDisk * 100 / totalDisk
-		if diskUsage > diskThreshold {
+		if diskUsage >= diskThreshold { // Изменено с > на >=
 			freeMB := (totalDisk - usedDisk) / (1024 * 1024)
 			fmt.Printf("Free disk space is too low: %d Mb left\n", freeMB)
 		}
@@ -114,7 +114,7 @@ func checkMetrics(stats []int64) {
 	usedNetwork := stats[6]
 	if totalNetwork > 0 {
 		networkUsage := usedNetwork * 100 / totalNetwork
-		if networkUsage > networkThreshold {
+		if networkUsage >= networkThreshold { // Изменено с > на >=
 			freeMbits := (totalNetwork - usedNetwork) / 1000000
 			fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", freeMbits)
 		}
